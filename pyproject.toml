@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name="boxtrot"
 version="0.0.1"
-description="A wrapper around prtree for box intersection."
+description="A wrapper around prtree for box intersection querries."
 readme="README.md"
 authors=[
     {name="MatteoLacki",email="matteo.lacki@gmail.com"},
