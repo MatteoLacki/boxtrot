@@ -343,40 +343,70 @@ def create_box_faces2(xmin, ymin, zmin, xmax, ymax, zmax):
     ]
 
 
-def plot_boxes(boxes, show=True):
+def plot_boxes(boxes, weights=None, show=True):
     import matplotlib.cm as cm
-    import matplotlib.colors as mcolors
     import matplotlib.pyplot as plt
+    import matplotlib.colors as mcolors
     from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
+
+    alphas = None
+    if not weights is None:
+        # Normalize to [0.1, 1.0] to avoid fully transparent boxes
+        alphas = 0.1 + 0.9 * (weights - weights.min()) / (weights.max() - weights.min())
+    # Make figure fullscreen
+    try:
+        manager = plt.get_current_fig_manager()
+        # Try full screen depending on backend
+        if hasattr(manager, "full_screen_toggle"):
+            manager.full_screen_toggle()
+        elif hasattr(manager, "window"):
+            # TkAgg backend
+            manager.window.state("zoomed")
+        else:
+            # fallback: set size to screen size
+            import tkinter as tk
+
+            root = tk.Tk()
+            width = root.winfo_screenwidth()
+            height = root.winfo_screenheight()
+            fig.set_size_inches(width / fig.dpi, height / fig.dpi)
+    except Exception as e:
+        print(f"Could not set fullscreen: {e}")
 
     if len(boxes) < 10:
         cmap = cm.get_cmap("tab10", len(boxes))  # up to 10 unique colors
         colors = [cmap(i) for i in range(len(boxes))]
 
     for i in range(len(boxes)):
-        row = boxes.iloc[i]
+        row = boxes.iloc[i].to_numpy()
         faces = create_box_faces(
-            row["x_min"],
-            row["y_min"],
-            row["z_min"],
-            row["x_max"],
-            row["y_max"],
-            row["z_max"],
+            row[0],
+            row[1],
+            row[2],
+            row[3],
+            row[4],
+            row[5],
         )
 
+        kwargs = {"alpha": 0.5}
+        if alphas is not None:
+            kwargs["alpha"] = alphas[i]
+
         if len(boxes) < 10:
-            box = Poly3DCollection(
-                faces, facecolors=colors[i], linewidths=0.8, edgecolors="k", alpha=0.5
-            )
-        else:
-            box = Poly3DCollection(faces, linewidths=0.8, edgecolors="k", alpha=0.5)
-        ax.add_collection3d(box)
-        ax.text(
-            row["x_min"], row["y_min"], row["z_min"], f"{i}", color="black", fontsize=10
+            kwargs["facecolors"] = colors[i]
+
+        box = Poly3DCollection(
+            faces,
+            linewidths=0.8,
+            edgecolors="k",
+            **kwargs,
         )
+
+        ax.add_collection3d(box)
+        ax.text(row[0], row[1], row[2], f"{i}", color="black", fontsize=10)
 
     if len(boxes) < 10:
         handles = [
@@ -386,6 +416,8 @@ def plot_boxes(boxes, show=True):
         ax.legend(handles, labels, loc="upper left", bbox_to_anchor=(1.05, 1))
     else:
         handles = [plt.Line2D([0], [0], lw=4) for i in range(len(boxes))]
+
+    plt.tight_layout()
 
     if show:
         plt.show()
