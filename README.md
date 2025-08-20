@@ -4,7 +4,7 @@ A wrapper around prtree for box intersection querries.
 
 
 ```python
-from boxplot import BoxIntersector
+from boxtrot.boxtrot import BoxIntersector
 
 boxes = pd.DataFrame(
     {
